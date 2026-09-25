@@ -5,7 +5,7 @@
 **Email:** [Candidate Email / maheshmekala@...]  
 **GitHub Profile:** [https://github.com/Maheshmekala](https://github.com/Maheshmekala)  
 **Repository:** [https://github.com/Maheshmekala/edumerge-360](https://github.com/Maheshmekala/edumerge-360)  
-**Live Deployed URL:** [https://responding-assumed-academics-marsh.trycloudflare.com](https://responding-assumed-academics-marsh.trycloudflare.com)  
+**Live Deployed URL:** [https://edumerge-360.onrender.com](https://edumerge-360.onrender.com)  
 **Submission Target:** `tech_interview@edumerge.com`  
 **Date:** September 25, 2026  
 
@@ -29,7 +29,7 @@ Rather than building a trivial CRUD mockup of one option, I designed and impleme
 
 ## 2. Working Solution & Reviewer Access
 
-* **Live Demo URL:** `https://responding-assumed-academics-marsh.trycloudflare.com` *(Zero install required, accessible on desktop & mobile)*
+* **Live Demo URL:** `https://edumerge-360.onrender.com` *(Zero install required, accessible on desktop & mobile)*
 * **Local Run:** `git clone https://github.com/Maheshmekala/edumerge-360 && npm install && npm run db:push && npx tsx prisma/seed.ts && npm run dev`
 * **Automated Test Suite:** `npm test` (17 automated unit tests passing across all algorithmic engines).
 

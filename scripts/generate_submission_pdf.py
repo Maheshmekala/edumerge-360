@@ -63,7 +63,7 @@ def create_submission_pdf(output_path):
     access_box = pymupdf.Rect(MARGIN_L, y, MARGIN_R, y + 80)
     p1.draw_rect(access_box, color=BLUE, fill=WHITE, width=1.5)
     p1.insert_text((MARGIN_L + 15, y + 20), "LIVE REVIEWER ACCESS & INSTANT EVALUATION LINKS", fontsize=10, fontname="helv", color=BLUE)
-    p1.insert_text((MARGIN_L + 15, y + 38), "• Live Public URL (Zero-Setup): https://responding-assumed-academics-marsh.trycloudflare.com", fontsize=9.5, fontname="helv", color=NAVY)
+    p1.insert_text((MARGIN_L + 15, y + 38), "• Live Public URL (Zero-Setup): https://edumerge-360.onrender.com", fontsize=9.5, fontname="helv", color=NAVY)
     p1.insert_text((MARGIN_L + 15, y + 54), "• 1-Click Role Switcher: Persistent dropdown in header allows instant switching between Super Admin, Dean, Finance,", fontsize=9, fontname="helv", color=SLATE)
     p1.insert_text((MARGIN_L + 23, y + 68), "Faculty, Counsellor, and Student personas without repeated manual login/logout.", fontsize=9, fontname="helv", color=SLATE)
 
