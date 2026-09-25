@@ -13,3 +13,6 @@ prisma/*.db
 prisma/*.db-journal
 .DS_Store
 coverage
+~$*
+*.tmp
+.claude
