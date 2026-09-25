@@ -105,7 +105,7 @@ def build_document(output_path):
     card_data = [
         [("Candidate Name:", " Mahesh Mekala"), ("Target Role:", " Product Engineer / SDE")],
         [("GitHub Repository:", " https://github.com/Maheshmekala/edumerge-360"), ("Submission Email:", " tech_interview@edumerge.com")],
-        [("Live Cloud Prototype:", " https://roles-edit-pregnant-hamilton.trycloudflare.com"), ("Submission Date:", " September 25, 2026")],
+        [("Live Cloud Prototype:", " https://responding-assumed-academics-marsh.trycloudflare.com"), ("Submission Date:", " September 25, 2026")],
         [("Automated Test Suite:", " 17 / 17 Tests Passing (Vitest)"), ("Technology Stack:", " Next.js 15, TypeScript, Prisma, PostgreSQL")]
     ]
 
@@ -648,7 +648,7 @@ def build_document(output_path):
         "all 5 assignments under a unified relational data model, with 17 passing automated unit tests, full RBAC, an append-only "
         "forensic audit trail, and zero-float financial arithmetic.\n\n"
         "Review Links:\n"
-        "• Live Deployed Prototype: https://roles-edit-pregnant-hamilton.trycloudflare.com\n"
+        "• Live Deployed Prototype: https://responding-assumed-academics-marsh.trycloudflare.com\n"
         "• GitHub Repository: https://github.com/Maheshmekala/edumerge-360\n"
         "• Full Documentation: Available directly in the /docs directory\n\n"
         "(Evaluator Note: A 1-Click Role Switcher is embedded in the persistent top navigation and sidebar so you can test "

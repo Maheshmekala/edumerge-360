@@ -16,7 +16,7 @@ Therefore, I have built **Edumerge-360**, a complete, production-grade **Enterpr
 ---
 
 ### Quick Review Links
-* **Live Deployed Prototype (Zero-setup cloud link):** [https://roles-edit-pregnant-hamilton.trycloudflare.com](https://roles-edit-pregnant-hamilton.trycloudflare.com)
+* **Live Deployed Prototype (Zero-setup cloud link):** [https://responding-assumed-academics-marsh.trycloudflare.com](https://responding-assumed-academics-marsh.trycloudflare.com)
 * **GitHub Repository:** [https://github.com/Maheshmekala/edumerge-360](https://github.com/Maheshmekala/edumerge-360)
 * **Architecture & API Documentation:** Available directly in the repository `/docs` directory.
 
