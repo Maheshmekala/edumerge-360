@@ -98,11 +98,20 @@ For seamless technical interview evaluation, a **1-Click Evaluator Role Switcher
 * 🔌 [REST API Specification](docs/api.md)
 * 🧪 [Testing & QA Report](docs/testing.md)
 * 🎬 [3-Minute Interview Demo Script](docs/demo.md)
+* 🌐 [Free Cloud Deployment Guide](docs/deployment.md)
 * 🤖 [Mandatory AI Usage Report](docs/ai-usage-report.md)
 
 ---
 
-## 7. Docker Deployment
+## 7. Free Cloud Deployment (Render / Railway / Vercel)
+You can deploy `Edumerge-360` to the cloud for free with zero infrastructure cost:
+* **Render.com (Free Web Service with SQLite):** Push to GitHub, import repository on [Render](https://render.com), use Build Command: `npm install && npx prisma db push && npx tsx prisma/seed.ts && npm run build` and Start Command: `npm run start`.
+* **Instant Cloudflare Live Tunnel:** Run `cloudflared tunnel --url http://localhost:3000` for an immediate free public HTTPS URL.
+* See [docs/deployment.md](docs/deployment.md) for complete step-by-step instructions.
+
+---
+
+## 8. Docker Deployment
 ```bash
 docker-compose up --build
 ```

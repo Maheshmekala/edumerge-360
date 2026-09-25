@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: edumerge-360
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma db push && npx tsx prisma/seed.ts && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: "file:./dev.db"
+      - key: JWT_SECRET
+        value: "edumerge-super-secret-key-360-enterprise-campus-os-2026"
