@@ -3,8 +3,8 @@ services:
     name: edumerge-360
     env: node
     plan: free
-    buildCommand: npm install && npx prisma db push && npx tsx prisma/seed.ts && npm run build
-    startCommand: npm run start
+    buildCommand: npm install --include=dev && npx prisma db push && npx tsx prisma/seed.ts && npm run build
+    startCommand: npx next start -p $PORT
     envVars:
       - key: NODE_ENV
         value: production
