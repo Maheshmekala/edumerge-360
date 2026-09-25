@@ -1,0 +1,434 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. CORE INSTITUTIONAL ENTITIES
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  role          String    // SUPER_ADMIN, ACADEMIC_ADMIN, FINANCE_OFFICER, FACULTY, COUNSELLOR, STUDENT
+  firstName     String
+  lastName      String
+  phone         String?
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  studentProfile StudentProfile?
+  facultyProfile FacultyProfile?
+  auditLogs      AuditLog[]
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g. "CSE", "ECE", "MECH", "MGMT"
+  name        String
+  description String?
+  courses     Course[]
+  rooms       Room[]
+  createdAt   DateTime @default(now())
+}
+
+model Course {
+  id           String     @id @default(uuid())
+  code         String     @unique // e.g. "BTECH-CSE", "MBA", "MCA"
+  name         String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  durationSem  Int        @default(8)
+  subjects     Subject[]
+  students     StudentProfile[]
+  createdAt    DateTime   @default(now())
+}
+
+model Subject {
+  id           String     @id @default(uuid())
+  code         String     @unique // e.g. "CS501", "CS502"
+  name         String
+  courseId     String
+  course       Course     @relation(fields: [courseId], references: [id])
+  semester     Int
+  credits      Int        @default(3)
+  type         String     @default("THEORY") // THEORY, LAB, SEMINAR
+  createdAt    DateTime   @default(now())
+
+  attendanceSessions AttendanceSession[]
+  timetableSlots     TimetableSlot[]
+}
+
+model StudentProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollmentNo    String   @unique
+  rollNo          String
+  courseId        String
+  course          Course   @relation(fields: [courseId], references: [id])
+  currentSemester Int      @default(1)
+  section         String   @default("A")
+  admissionYear   Int
+  category        String   @default("GENERAL") // GENERAL, MERIT_SCHOLAR, SPORTS, NEED_BASED
+  createdAt       DateTime @default(now())
+
+  attendanceRecords AttendanceRecord[]
+  invoices          Invoice[]
+  tickets           Ticket[]
+  concessions       StudentConcession[]
+}
+
+model FacultyProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId   String   @unique
+  department   String
+  designation  String
+  specialization String?
+  maxWeeklyHours Int    @default(20)
+  createdAt    DateTime @default(now())
+
+  attendanceSessions AttendanceSession[]
+  timetableSlots     TimetableSlot[]
+}
+
+// ==========================================
+// 2. MODULE 1: SMART ATTENDANCE ENGINE
+// ==========================================
+
+model AttendanceSession {
+  id           String   @id @default(uuid())
+  subjectId    String
+  subject      Subject  @relation(fields: [subjectId], references: [id])
+  facultyId    String
+  faculty      FacultyProfile @relation(fields: [facultyId], references: [id])
+  semester     Int
+  section      String
+  sessionDate  String   // Stored as ISO YYYY-MM-DD for exact calendar day comparison
+  periodNumber Int      // 1 to 8
+  isLocked     Boolean  @default(false)
+  lockedAt     DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  records      AttendanceRecord[]
+  corrections  AttendanceCorrection[]
+
+  @@unique([subjectId, semester, section, sessionDate, periodNumber])
+}
+
+model AttendanceRecord {
+  id         String            @id @default(uuid())
+  sessionId  String
+  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    StudentProfile    @relation(fields: [studentId], references: [id])
+  status     String            // PRESENT, ABSENT, LATE, EXCUSED
+  remarks    String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@unique([sessionId, studentId])
+}
+
+model AttendanceCorrection {
+  id              String            @id @default(uuid())
+  sessionId       String
+  session         AttendanceSession @relation(fields: [sessionId], references: [id])
+  studentId       String
+  requestedStatus String            // PRESENT, ABSENT, LATE, EXCUSED
+  reason          String
+  status          String            @default("PENDING") // PENDING, APPROVED, REJECTED
+  requestedBy     String            // Faculty User ID
+  reviewedBy      String?           // HOD / Dean User ID
+  reviewedAt      DateTime?
+  reviewRemarks   String?
+  createdAt       DateTime          @default(now())
+}
+
+// ==========================================
+// 3. MODULE 2: FEE COLLECTION & RECONCILIATION
+// ==========================================
+
+model FeeHead {
+  id                 String   @id @default(uuid())
+  code               String   @unique // e.g. "TUITION", "EXAM", "LIBRARY", "HOSTEL", "TRANSPORT"
+  name               String
+  isRefundable       Boolean  @default(false)
+  priorityOrder      Int      @default(1) // Waterfall priority for partial allocation
+  defaultAmountCents Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  invoiceItems       InvoiceItem[]
+}
+
+model StudentConcession {
+  id          String         @id @default(uuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  name        String         // e.g. "Merit Scholarship", "Sports Quota"
+  type        String         // PERCENTAGE, FLAT
+  value       Int            // e.g. 20 (for 20%) or 500000 (for $5,000 flat)
+  amountCents Int
+  reason      String
+  approvedBy  String
+  academicYear String
+  semester    Int
+  createdAt   DateTime       @default(now())
+}
+
+model Invoice {
+  id               String         @id @default(uuid())
+  invoiceNo        String         @unique // e.g. "INV-2026-0001"
+  studentId        String
+  student          StudentProfile @relation(fields: [studentId], references: [id])
+  academicYear     String         // e.g. "2025-2026"
+  semester         Int
+  dueDate          String         // YYYY-MM-DD
+  totalAmountCents Int            // Gross fee
+  concessionCents  Int            @default(0) // Concession deducted
+  netAmountCents   Int            // Net payable
+  paidAmountCents  Int            @default(0) // Cumulative payments
+  status           String         @default("ISSUED") // DRAFT, ISSUED, PARTIALLY_PAID, PAID, OVERDUE
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  items            InvoiceItem[]
+  payments         Payment[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  feeHeadId   String
+  feeHead     FeeHead  @relation(fields: [feeHeadId], references: [id])
+  amountCents Int
+  paidCents   Int      @default(0)
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  paymentNo        String   @unique // e.g. "PAY-2026-0001"
+  invoiceId        String
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id])
+  amountCents      Int
+  method           String   // ONLINE_GATEWAY, CASH, CHEQUE, BANK_TRANSFER
+  status           String   @default("INITIATED") // INITIATED, PENDING, SUCCESS, FAILED, REVERSED, REFUNDED
+  idempotencyKey   String?  @unique
+  gatewayOrderId   String?
+  gatewayPaymentId String?
+  bankUtr          String?
+  chequeNo         String?
+  chequeBank       String?
+  chequeDate       String?
+  chequeStatus     String?  // DEPOSITED, CLEARED, BOUNCED
+  paidAt           DateTime?
+  recordedByUserId String?
+  reconciliationStatus String @default("UNRECONCILED") // UNRECONCILED, MATCHED, AMOUNT_DISCREPANCY, UNRECOGNIZED_IN_ERP
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  receipt          Receipt?
+  refundRequests   RefundReversalRequest[]
+}
+
+model Receipt {
+  id               String   @id @default(uuid())
+  receiptNo        String   @unique // e.g. "RCPT-2026-0001"
+  paymentId        String   @unique
+  payment          Payment  @relation(fields: [paymentId], references: [id])
+  verificationHash String   @unique // SHA-256 digital verification hash
+  generatedAt      DateTime @default(now())
+}
+
+model BankSettlementBatch {
+  id             String   @id @default(uuid())
+  filename       String
+  uploadedBy     String
+  totalRows      Int      @default(0)
+  matchedRows    Int      @default(0)
+  discrepantRows Int      @default(0)
+  uploadedAt     DateTime @default(now())
+
+  records        BankSettlementRecord[]
+}
+
+model BankSettlementRecord {
+  id               String              @id @default(uuid())
+  batchId          String
+  batch            BankSettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  transactionDate  String              // YYYY-MM-DD
+  bankUtr          String
+  description      String
+  creditAmountCents Int
+  matchedPaymentId String?
+  matchStatus      String              @default("UNRECONCILED") // MATCHED, AMOUNT_DISCREPANCY, UNRECOGNIZED_IN_ERP, MISSING_IN_BANK
+  discrepancyNote  String?
+  createdAt        DateTime            @default(now())
+}
+
+model RefundReversalRequest {
+  id          String   @id @default(uuid())
+  paymentId   String
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  type        String   // REFUND, REVERSAL
+  amountCents Int
+  reason      String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  requestedBy String   // Staff User ID
+  approvedBy  String?  // Admin User ID
+  notes       String?
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+// ==========================================
+// 4. MODULE 3: INTELLIGENT TIMETABLE GENERATOR
+// ==========================================
+
+model Room {
+  id           String      @id @default(uuid())
+  roomNo       String      @unique // e.g. "LH-101", "LAB-204"
+  building     String      @default("Academic Block A")
+  type         String      @default("LECTURE_HALL") // LECTURE_HALL, COMPUTER_LAB, SCIENCE_LAB, SEMINAR_HALL
+  capacity     Int         @default(60)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  isActive     Boolean     @default(true)
+
+  slots        TimetableSlot[]
+}
+
+model TimetableSlot {
+  id           String         @id @default(uuid())
+  academicYear String         // e.g. "2025-2026"
+  semester     Int
+  section      String         @default("A")
+  dayOfWeek    Int            // 1 = Monday to 6 = Saturday
+  periodNo     Int            // 1 to 6
+  subjectId    String
+  subject      Subject        @relation(fields: [subjectId], references: [id])
+  facultyId    String
+  faculty      FacultyProfile @relation(fields: [facultyId], references: [id])
+  roomId       String
+  room         Room           @relation(fields: [roomId], references: [id])
+  createdAt    DateTime       @default(now())
+
+  @@unique([academicYear, semester, section, dayOfWeek, periodNo])
+}
+
+// ==========================================
+// 5. MODULE 4: STUDENT SUPPORT & SLA HELPDESK
+// ==========================================
+
+model Ticket {
+  id          String   @id @default(uuid())
+  ticketNo    String   @unique // e.g. "TICK-2026-0001"
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  category    String   // ACADEMICS, FINANCE, HOSTEL, EXAM, IT
+  priority    String   // LOW, MEDIUM, HIGH, CRITICAL
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, WAITING_ON_STUDENT, RESOLVED, CLOSED
+  title       String
+  description String
+  assignedTo  String?  // Staff User ID
+  slaHours    Int      @default(48)
+  slaDueAt    DateTime
+  isEscalated Boolean  @default(false)
+  escalatedAt DateTime?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comments    TicketComment[]
+  activities  TicketActivity[]
+}
+
+model TicketComment {
+  id         String   @id @default(uuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId   String   // User ID
+  message    String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model TicketActivity {
+  id         String   @id @default(uuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actorId    String   // User ID
+  action     String   // STATUS_CHANGE, ASSIGNMENT, PRIORITY_CHANGE, ESCALATION, SLA_BREACH
+  fromState  String?
+  toState    String?
+  remarks    String?
+  createdAt  DateTime @default(now())
+}
+
+// ==========================================
+// 6. MODULE 5: ADMISSION LEAD CRM
+// ==========================================
+
+model Lead {
+  id               String    @id @default(uuid())
+  leadNo           String    @unique // e.g. "LEAD-2026-0001"
+  fullName         String
+  email            String
+  phone            String
+  city             String?
+  source           String    // WEBSITE, WALK_IN, PHONE, WHATSAPP, EDUCATION_FAIR, REFERRAL
+  interestedCourse String    // e.g. "BTECH-CSE", "MBA"
+  status           String    @default("NEW") // NEW, CONTACTED, QUALIFIED, COUNSELLING, APPLICATION_STARTED, APPLICATION_SUBMITTED, ENROLLED, LOST, DISQUALIFIED
+  score            Int       @default(50) // 0-100 engagement score
+  assignedTo       String?   // Counsellor User ID
+  lostReason       String?
+  lastFollowUpAt   DateTime?
+  nextFollowUpAt   DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  activities       LeadActivity[]
+}
+
+model LeadActivity {
+  id           String    @id @default(uuid())
+  leadId       String
+  lead         Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  counsellorId String    // User ID
+  activityType String    // CALL, WHATSAPP, EMAIL, CAMPUS_VISIT, NOTE
+  notes        String
+  outcome      String?   // POSITIVE, NEUTRAL, NOT_REACHABLE, CALLBACK_REQUESTED
+  scheduledAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// ==========================================
+// 7. SYSTEM-WIDE AUDITABILITY & LOGS
+// ==========================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  entity      String   // INVOICE, PAYMENT, ATTENDANCE, TIMETABLE, TICKET, LEAD, USER
+  entityId    String
+  action      String   // CREATE, UPDATE, DELETE, APPROVE, REJECT, REVERSE, LOCK, ESCALATE
+  performedBy String
+  user        User     @relation(fields: [performedBy], references: [id])
+  beforeState String?  // JSON string
+  afterState  String?  // JSON string
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+}
